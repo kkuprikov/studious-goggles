@@ -3,7 +3,7 @@
 module Wps
   module Actions
     module Shifts
-      class Index < Wps::Action
+      class Index < Action
         def handle(*, response)
           response.format = :json
           response.body = self.class.name

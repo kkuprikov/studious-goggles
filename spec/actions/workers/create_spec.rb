@@ -1,5 +1,5 @@
 RSpec.describe Main::Actions::Workers::Create do
-  let(:params) { Hash[name: 'John'] }
+  let(:params) { { worker: { name: 'John Doe' } } }
 
   it "works" do
     response = subject.call(params)

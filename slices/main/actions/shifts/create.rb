@@ -3,7 +3,7 @@
 module Main
   module Actions
     module Shifts
-      class Create < Wps::Action
+      class Create < Action
         include Deps['repositories.workers', 'repositories.shifts']
         SHIFTS_DAILY_LIMIT = 3
 

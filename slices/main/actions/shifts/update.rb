@@ -3,7 +3,7 @@
 module Main
   module Actions
     module Shifts
-      class Update < Wps::Action
+      class Update < Action
         def handle(*, response)
           response.format = :json
           response.body = self.class.name
