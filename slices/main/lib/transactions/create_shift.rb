@@ -7,14 +7,11 @@ module Main
       include Deps['repositories.workers', 'repositories.shifts', 'settings']
 
       def call(args)
-        find_worker(args[:worker_id]).bind do
-          has_shift(worker_id: args[:worker_id], day: args[:day]).bind do
-            available_interval(day: args[:day], requested_interval: args[:interval]).fmap do |interval|
-              shift = shifts.create(**args, interval: interval)
-              Serializers::Shift.new(shift).to_json
-            end
-          end
-        end
+        yield find_worker(args[:worker_id])
+        yield has_shift(worker_id: args[:worker_id], day: args[:day])
+        interval = yield available_interval(day: args[:day], requested_interval: args[:interval])
+        shift = shifts.create(**args, interval: interval)
+        Success(Serializers::Shift.new(shift).to_json)
       end
 
       private
@@ -44,7 +41,7 @@ module Main
 
       def has_shift worker_id:, day:
         if !shifts.filter(day: day, worker_id: worker_id).to_a.empty?
-          Failure(:has_shift)
+          Failure(:worker_has_shift)
         else
           Success()
         end

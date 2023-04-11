@@ -24,7 +24,7 @@ module Main
           result = create_shift.call(request.params[:shift])
           if result.success?
             response.status = 201
-            response.body = result.success
+            response.body = result.value!
           else
             response.status = 400
             response.body = {error: result.failure}.to_json
