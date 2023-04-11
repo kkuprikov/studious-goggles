@@ -1,4 +1,5 @@
 Factory.define(:shift) do |f|
+  f.day '2023-01-01'
   f.trait :morning_shift do |f|
     f.interval 0
   end

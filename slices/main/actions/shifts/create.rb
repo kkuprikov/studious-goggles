@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-
 module Main
   module Actions
     module Shifts
@@ -60,8 +59,7 @@ module Main
               }]
             end
           end
-          
-          return [(scheduled_shifts.last&.interval || -1) + 1, nil]
+          return [params[:interval] || (scheduled_shifts.last&.interval || -1) + 1, nil]
         end
       end
     end
