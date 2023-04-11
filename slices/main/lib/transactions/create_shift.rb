@@ -8,8 +8,8 @@ module Main
 
       def call(args)
         yield find_worker(args[:worker_id])
-        yield has_shift(worker_id: args[:worker_id], day: args[:day])
-        interval = yield available_interval(day: args[:day], requested_interval: args[:interval])
+        yield has_shift(**args.slice(:worker_id, :day))
+        interval = yield available_interval(**args.slice(:day, :interval))
         shift = shifts.create(**args, interval: interval)
         Success(Serializers::Shift.new(shift).to_json)
       end
@@ -24,19 +24,20 @@ module Main
         end
       end
 
-      def available_interval day:, requested_interval:
-        if requested_interval && shifts.filter(day: day, interval: requested_interval).to_a.size.positive?
+      def available_interval day:, interval: nil
+        booked_shifts = shifts.filter(day: day)
+
+        if interval && booked_shifts.to_a.find{|shift| shift.interval == interval}
           return Failure(:interval_booked)
         end
 
-        booked_shifts = shifts.filter(day: day)
         if booked_shifts.to_a.size == settings.daily_shift_limit
           return Failure(:day_fully_booked)
         end
 
         available_intervals = (0...settings.daily_shift_limit).to_a - booked_shifts.pluck(:interval)
 
-        Success(requested_interval || available_intervals.first)
+        Success(interval || available_intervals.first)
       end
 
       def has_shift worker_id:, day:
@@ -46,7 +47,6 @@ module Main
           Success()
         end
       end
-
     end
   end
 end
