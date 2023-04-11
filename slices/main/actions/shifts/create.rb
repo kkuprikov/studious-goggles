@@ -3,63 +3,32 @@ module Main
   module Actions
     module Shifts
       class Create < Action
-        include Deps['repositories.workers', 'repositories.shifts']
-        SHIFTS_DAILY_LIMIT = 3
-
+        include Deps['transactions.create_shift', 'settings']
         
         params do
           required(:shift).hash do
             required(:worker_id).filled(:int?)
             # TODO: use a better validation approach with Date.parse
             required(:day).filled(:str?, format?: /\d{4}-\d{2}-\d{2}/)
-            optional(:interval).filled(:int?, included_in?: 0...SHIFTS_DAILY_LIMIT)
+            optional(:interval).filled(:int?)
           end
         end
         
-        def handle(request, response)
-          response.format = :json
-          response.status = 400
+        def handle(request, response) 
+          halt 422, {errors: request.params.errors}.to_json unless request.params.valid?
           
-          if !request.params.valid? || !workers.find(request.params[:shift][:worker_id])
-            response.body = {error: "Invalid params"}.to_json
-            return
+          if request.params[:shift][:interval].to_i >= settings.daily_shift_limit
+            halt 422, {errors: {interval: "Can not exceed #{settings.daily_shift_limit - 1}"}}
           end
 
-          interval, error = valid_interval(request.params[:shift])
-          if interval
-            response.status = :created
-            shift = shifts.create(**request.params[:shift], interval: interval)
-            response.body = Serializers::Shift.new(shift).to_json
+          result = create_shift.call(request.params[:shift])
+          if result.success?
+            response.status = 201
+            response.body = result.success
           else
-            response.body = error.to_json
+            response.status = 400
+            response.body = {error: result.failure}.to_json
           end
-        end
-
-        private
-
-        def valid_interval(params)
-          scheduled_shifts = shifts.filter(day: params[:day]).to_a
-          
-          if scheduled_shifts.size == SHIFTS_DAILY_LIMIT
-            return [nil, {
-              error: 'The date is fully booked', 
-              shifts: Serializers::Shift.new(scheduled_shifts).serialize
-            }]
-          end
-          
-          %i[interval worker_id].each do |param|
-            existing_shift = scheduled_shifts.find do |shift| 
-              shift.public_send(param) == params[param]
-            end
-          
-            if existing_shift
-              return [nil, {
-                error: "Conflicting #{param}", 
-                shifts: Serializers::Shift.new(existing_shift).serialize
-              }]
-            end
-          end
-          return [params[:interval] || (scheduled_shifts.last&.interval || -1) + 1, nil]
         end
       end
     end

@@ -8,6 +8,7 @@ gem "hanami-controller", "~> 2.0"
 gem "hanami-validations", "~> 2.0"
 
 gem "dry-types", "~> 1.0", ">= 1.6.1"
+gem "dry-monads"
 gem "alba"
 gem "oj"
 gem "puma"
@@ -18,6 +19,7 @@ gem "pg"
 
 group :development, :test do
   gem "dotenv"
+  gem "standard"
 end
 
 group :cli, :development do

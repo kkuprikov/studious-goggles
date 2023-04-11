@@ -19,6 +19,20 @@ RSpec.describe Main::Actions::Shifts::Create do
     end
   end
 
+  context "with invalid params" do
+    let(:params) { { shift: { worker_id: john.id, day: 'asd' } } }
+
+    specify { expect(subject.call(params)).not_to be_successful }
+
+    context "with interval specified" do
+      let(:params) { { shift: { worker_id: john.id, day: '2023-01-01', interval: 3 } } }
+      it 'fails when interval is out of range' do
+        result = subject.call(params)
+        expect(subject.call(params)).not_to be_successful
+      end
+    end
+  end
+
   describe "scheduling conflicts" do
     it "should not create two shift for the same worker" do
       Factory[:shift, :morning_shift, worker_id: john.id]
